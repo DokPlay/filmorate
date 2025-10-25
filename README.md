@@ -1,4 +1,4 @@
-# Filmorate (Sprint 1)
+# Filmorate (Sprint 10)
 
 Бэкенд-сервис на **Spring Boot 3.3 / Java 17** для работы с фильмами и пользователями. Данные пока хранятся **в памяти** (Map).  
 Ветка задания: `controllers-films-users`.
