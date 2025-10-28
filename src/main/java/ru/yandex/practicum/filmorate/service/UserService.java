@@ -4,46 +4,69 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
-/** In-memory user storage & normalization. */
+/**
+ * CHANGES:
+ * - CHANGE: Map -> Map<Long, User>, idSeq: AtomicInteger -> long.
+ * - CHANGE: normalize(): если name пустой — подставляем login (требование курса).
+ * - CHANGE: безопасное логирование (id/login вместо дампа сущности).
+ */
 @Slf4j
 @Service
 public class UserService {
 
-    private final Map<Integer, User> users = new HashMap<>();
-    private final AtomicInteger idSeq = new AtomicInteger(0);
+  // CHANGE: ключи теперь Long
+  private final Map<Long, User> users = new HashMap<>();
 
-    public User add(User user) {
-        normalize(user);
-        int id = idSeq.incrementAndGet();
-        user.setId(id);
-        users.put(id, user);
-        log.info("Добавлен пользователь: {}", user);
-        return user;
-    }
+  // CHANGE: счётчик без Atomic*
+  private long idSeq = 0L;
 
-    public User update(User user) {
-        if (user.getId() == null || !users.containsKey(user.getId())) {
-            throw new NotFoundException("Пользователь с id=" + user.getId() + " не найден.");
-        }
-        normalize(user);
-        users.put(user.getId(), user);
-        log.info("Обновлён пользователь: {}", user);
-        return user;
-    }
+  public List<User> findAll() {
+    // CHANGE: типобезопасный List
+    return new ArrayList<>(users.values());
+  }
 
-    public List<User> getAll() {
-        return new ArrayList<>(users.values());
+  public User getById(long id) {
+    User user = users.get(id);
+    if (user == null) {
+      throw new NotFoundException("Пользователь с id=" + id + " не найден.");
     }
+    return user;
+  }
 
-    private void normalize(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+  public User create(User user) {
+    normalize(user); // CHANGE: автоподстановка name
+    long id = nextId(); // CHANGE: long id
+    user.setId(id);
+    users.put(id, user);
+    log.info("Создан пользователь id={} login='{}'", id, user.getLogin()); // CHANGE
+    return user;
+  }
+
+  public User update(User user) {
+    if (user.getId() == null || !users.containsKey(user.getId())) {
+      throw new NotFoundException("Пользователь с id=" + user.getId() + " не найден.");
     }
+    normalize(user); // CHANGE
+    users.put(user.getId(), user);
+    log.info("Обновлён пользователь id={}", user.getId()); // CHANGE
+    return user;
+  }
+
+  // CHANGE: инкремент long-последовательности
+  private long nextId() {
+    idSeq += 1L;
+    return idSeq;
+  }
+
+  // CHANGE: правило — если name пустой, подставляем login
+  private void normalize(User user) {
+    if (user.getName() == null || user.getName().isBlank()) {
+      user.setName(user.getLogin());
+    }
+  }
 }

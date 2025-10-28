@@ -10,24 +10,31 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Film model. */
+/**
+ * CHANGES:
+ * - CHANGE: id: Integer -> Long (во избежание переполнения и единообразия по проекту).
+ * - CHANGE: уточнены/добавлены валидационные аннотации и человекочитаемые сообщения.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Film {
-    private Integer id;
 
-    @NotBlank(message = "Название фильма не может быть пустым.")
-    private String name;
+  // CHANGE: тип Integer -> Long
+  private Long id;
 
-    @Size(max = 200, message = "Максимальная длина описания — 200 символов.")
-    private String description;
+  @NotBlank(message = "Название фильма не может быть пустым.")
+  private String name;
 
-    @NotNull(message = "Дата релиза обязательна.")
-    @PastOrPresent(message = "Дата релиза не может быть в будущем.")
-    private LocalDate releaseDate;
+  // CHANGE: ограничение длины описания в соответствии с требованиями курса
+  @Size(max = 200, message = "Максимальная длина описания — 200 символов.")
+  private String description;
 
-    @NotNull(message = "Продолжительность обязательна.")
-    @Positive(message = "Продолжительность должна быть положительным числом.")
-    private Integer duration;
+  @NotNull(message = "Дата релиза обязательна.")
+  @PastOrPresent(message = "Дата релиза не может быть в будущем.")
+  private LocalDate releaseDate;
+
+  @NotNull(message = "Продолжительность обязательна.")
+  @Positive(message = "Продолжительность должна быть положительным числом.")
+  private Integer duration;
 }
