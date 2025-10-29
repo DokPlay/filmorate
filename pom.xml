@@ -83,6 +83,13 @@
         </configuration>
       </plugin>
 
+      <!-- SPRINT 11 (CI): фиксируем версию maven-jar-plugin, чтобы избежать сетевых 500 на latest -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.3.0</version>
+      </plugin>
+
       <!-- Spring Boot -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
