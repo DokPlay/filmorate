@@ -18,6 +18,10 @@ import ru.yandex.practicum.filmorate.service.UserService;
  * CHANGES:
  * - CHANGE: безопасное логирование (login/id вместо дампа сущности).
  * - CHANGE: согласование типов с Long id.
+ *
+ * FIX2:
+ * - INFO для ключевых событий (create/update/getById) с краткими параметрами.
+ * - DEBUG для детальных сведений (полный payload), включаем при отладке.
  */
 @Slf4j
 @RestController
@@ -28,28 +32,36 @@ public class UserController {
   private final UserService userService;
 
   @PostMapping
-  public User create(@Valid @RequestBody User user) {
+  public User create(@Valid @RequestBody final User user) {
     // CHANGE: не логируем весь payload — только тех. поле
-    log.debug("POST /users — создание: login='{}'", user.getLogin());
+    // FIX2: ключевое событие — на уровне INFO
+    log.info("POST /users — create login='{}'", user.getLogin());
+    // FIX2: полный payload — в DEBUG
+    log.debug("POST /users payload: {}", user);
     return userService.create(user);
   }
 
   @PutMapping
-  public User update(@Valid @RequestBody User user) {
+  public User update(@Valid @RequestBody final User user) {
     // CHANGE: аккуратный лог
-    log.debug("PUT /users — обновление id={}", user.getId());
+    // FIX2: важное событие — INFO + краткий контекст
+    log.info("PUT /users — update id={} login='{}'", user.getId(), user.getLogin());
+    // FIX2: полный payload — в DEBUG
+    log.debug("PUT /users payload: {}", user);
     return userService.update(user);
   }
 
   @GetMapping
   public List<User> findAll() {
-    log.debug("GET /users — список");
+    // FIX2: список — обычная операция, оставляем в DEBUG
+    log.debug("GET /users — list");
     return userService.findAll();
   }
 
   @GetMapping("/{id}")
-  public User getById(@PathVariable long id) { // CHANGE: long id
-    log.debug("GET /users/{} — получить пользователя", id);
+  public User getById(@PathVariable final long id) { // CHANGE: long id
+    // FIX2: входной параметр важен — логируем на INFO
+    log.info("GET /users/{} — fetch", id);
     return userService.getById(id);
   }
 }

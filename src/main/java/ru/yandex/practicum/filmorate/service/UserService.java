@@ -14,6 +14,12 @@ import ru.yandex.practicum.filmorate.model.User;
  * - CHANGE: Map -> Map<Long, User>, idSeq: AtomicInteger -> long.
  * - CHANGE: normalize(): если name пустой — подставляем login (требование курса).
  * - CHANGE: безопасное логирование (id/login вместо дампа сущности).
+ *
+ * FIX2:
+ * - INFO для ключевых событий; полный payload не логируем (детали оставляем на уровень DEBUG при необходимости).
+ * - nextId(): упрощено до `return ++idSeq;` (рекомендация ревьюера).
+ * - Логи обновления дополнили login для наглядности.
+ * - Добавлен alias-метод getAll() на findAll() для совместимости контроллеров.
  */
 @Slf4j
 @Service
@@ -30,6 +36,11 @@ public class UserService {
     return new ArrayList<>(users.values());
   }
 
+  // FIX2: alias на случай, если контроллер вызывает getAll()
+  public List<User> getAll() {
+    return findAll();
+  }
+
   public User getById(long id) {
     User user = users.get(id);
     if (user == null) {
@@ -43,7 +54,8 @@ public class UserService {
     long id = nextId(); // CHANGE: long id
     user.setId(id);
     users.put(id, user);
-    log.info("Создан пользователь id={} login='{}'", id, user.getLogin()); // CHANGE
+    // CHANGE: ключевое событие в INFO (без полного дампа сущности)
+    log.info("Создан пользователь id={} login='{}'", id, user.getLogin());
     return user;
   }
 
@@ -53,14 +65,16 @@ public class UserService {
     }
     normalize(user); // CHANGE
     users.put(user.getId(), user);
-    log.info("Обновлён пользователь id={}", user.getId()); // CHANGE
+    // CHANGE: важное событие — INFO
+    // FIX2: добавили login для контекста
+    log.info("Обновлён пользователь id={} login='{}'", user.getId(), user.getLogin());
     return user;
   }
 
   // CHANGE: инкремент long-последовательности
+  // FIX2: упрощённая форма — сразу вернуть инкрементированное значение
   private long nextId() {
-    idSeq += 1L;
-    return idSeq;
+    return ++idSeq;
   }
 
   // CHANGE: правило — если name пустой, подставляем login

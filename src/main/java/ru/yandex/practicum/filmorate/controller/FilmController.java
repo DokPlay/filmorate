@@ -18,6 +18,10 @@ import ru.yandex.practicum.filmorate.service.FilmService;
  * CHANGES:
  * - CHANGE: безопасное логирование — без дампа всей сущности.
  * - CHANGE: согласование типов с Long id.
+ *
+ * FIX2:
+ * - INFO для ключевых событий (create/update/getById) с краткими параметрами.
+ * - DEBUG для детальных сведений (полный payload), включается при необходимости.
  */
 @Slf4j
 @RestController
@@ -28,28 +32,36 @@ public class FilmController {
   private final FilmService filmService;
 
   @PostMapping
-  public Film create(@Valid @RequestBody Film film) {
+  public Film create(@Valid @RequestBody final Film film) {
     // CHANGE: логируем только безопасные поля
-    log.debug("POST /films — создание: name='{}'", film.getName());
+    // FIX2: основное событие — на уровне INFO
+    log.info("POST /films — create name='{}'", film.getName());
+    // FIX2: деталь — полный payload в DEBUG
+    log.debug("POST /films payload: {}", film);
     return filmService.create(film);
   }
 
   @PutMapping
-  public Film update(@Valid @RequestBody Film film) {
+  public Film update(@Valid @RequestBody final Film film) {
     // CHANGE: не логируем всю сущность
-    log.debug("PUT /films — обновление id={}", film.getId());
+    // FIX2: важное событие — на уровне INFO + краткий контекст
+    log.info("PUT /films — update id={} name='{}'", film.getId(), film.getName());
+    // FIX2: полный payload — в DEBUG
+    log.debug("PUT /films payload: {}", film);
     return filmService.update(film);
   }
 
   @GetMapping
   public List<Film> findAll() {
-    log.debug("GET /films — список");
+    // FIX2: список — обычная операция, оставляем в DEBUG, чтобы не шумело в INFO
+    log.debug("GET /films — list");
     return filmService.findAll();
   }
 
   @GetMapping("/{id}")
-  public Film getById(@PathVariable long id) { // CHANGE: long id
-    log.debug("GET /films/{} — получить фильм", id);
+  public Film getById(@PathVariable final long id) { // CHANGE: long id
+    // FIX2: входной параметр важен — логируем на INFO
+    log.info("GET /films/{} — fetch", id);
     return filmService.getById(id);
   }
 }
