@@ -9,24 +9,30 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** User model. */
+/**
+ * CHANGES:
+ * - CHANGE: id: Integer -> Long.
+ * - CHANGE: добавлены/уточнены валидации email/login/birthday.
+ * - Примечание: name может быть пустым — сервис подставит login (см. UserService.normalize()).
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-    private Integer id;
 
-    @NotBlank(message = "Email не может быть пустым.")
-    @Email(message = "Некорректный формат email.")
-    private String email;
+  // CHANGE: тип Integer -> Long
+  private Long id;
 
-    @NotBlank(message = "Логин не может быть пустым.")
-    @Pattern(regexp = "^\\S+$", message = "Логин не должен содержать пробелы.")
-    private String login;
+  @NotBlank(message = "Email не может быть пустым.")
+  @Email(message = "Некорректный формат email.")
+  private String email;
 
-    /** Может быть пустым — подставим login. */
-    private String name;
+  @NotBlank(message = "Логин не может быть пустым.")
+  @Pattern(regexp = "^\\S+$", message = "Логин не должен содержать пробелы.")
+  private String login;
 
-    @PastOrPresent(message = "Дата рождения не может быть в будущем.")
-    private LocalDate birthday;
+  private String name;
+
+  @PastOrPresent(message = "Дата рождения не может быть в будущем.")
+  private LocalDate birthday;
 }
