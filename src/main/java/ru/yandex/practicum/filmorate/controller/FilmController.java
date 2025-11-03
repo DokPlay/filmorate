@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-/**
+ // TODO сортировка/лимит теперь в хранилище.
+ /**
  * CHANGES:
  * - CHANGE: безопасное логирование — без дампа всей сущности.
  * - CHANGE: согласование типов с Long id.

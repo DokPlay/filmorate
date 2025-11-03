@@ -1,9 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,12 +15,12 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 /**
  * CHANGES:
- * - CHANGE: Map<Integer, Film> -> Map<Long, Film>, idSeq: AtomicInteger -> long (нет конкуренции потоков).
+ * - CHANGE: Map -> Map, idSeq: AtomicInteger -> long (нет конкуренции потоков).
  * - CHANGE: единая бизнес-валидация даты релиза (не раньше 1895-12-28).
  * - CHANGE: безопасное логирование (без дампа всей сущности).
  *
  * FIX2:
- * - nextId(): упрощено до `return ++idSeq;` (рекомендация ревьюера).
+ * - nextId(): упрощено до {@code return ++idSeq;} (рекомендация ревьюера).
  * - Логи create/update/delete оставлены на уровне INFO (ключевые события).
  * - Добавлен alias-метод getAll() на случай вызовов из контроллеров.
  *
@@ -32,8 +30,9 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
  * - генерация id и хранение полностью перенесены в InMemoryFilmStorage; локальные Map/счётчик удалены.
  * - метод getAll() сохранён как алиас findAll() для обратной совместимости.
  *
- * SPRINT 11 FIX3:
- * - Удалён неиспользуемый импорт NotFoundException (ворнинг IDE/Checkstyle).
+ * SPRINT 11 FIX:
+ * - Перенос сортировки/лимита популярных фильмов в слой хранения (см. FilmStorage.findMostPopular).
+ * - Уровень лога при неуспешном удалении лайка повышен до WARN по рекомендации ревью.
  */
 @Slf4j
 @Service
@@ -45,10 +44,11 @@ public class FilmService {
 
   // SPRINT 11: внедряем зависимости от интерфейсов хранилищ
   private final FilmStorage filmStore;
-  private final UserStorage userStore; // проверка существования пользователя при лайках
+  private final UserStorage userStore;
 
+  // CHANGE: возвращаем типобезопасный List (теперь — из хранилища)
   public List<Film> findAll() {
-    // CHANGE: возвращаем типобезопасный List (теперь — из хранилища)
+    // NOTE: findAll без лимита потенциально опасен на БД; хранить для обратной совместимости.
     return filmStore.findAll();
   }
 
@@ -66,7 +66,8 @@ public class FilmService {
     validateBusinessRules(film);
     // SPRINT 11: генерация id и сохранение — в storage
     final Film saved = filmStore.create(film);
-    log.info("Создан фильм id={} name='{}'", saved.getId(), saved.getName()); // CHANGE: безопасный лог
+    // CHANGE: безопасный лог
+    log.info("Создан фильм id={} name='{}'", saved.getId(), saved.getName());
     return saved;
   }
 
@@ -77,25 +78,28 @@ public class FilmService {
     validateBusinessRules(film);
     // SPRINT 11: обновление — через storage
     final Film saved = filmStore.update(film);
-    log.info("Обновлён фильм id={} name='{}'", saved.getId(), saved.getName()); // CHANGE
+    // CHANGE
+    log.info("Обновлён фильм id={} name='{}'", saved.getId(), saved.getName());
     return saved;
   }
 
   public void delete(final long id) {
     // SPRINT 11: удаление — через storage
     filmStore.delete(id);
-    log.info("Удалён фильм id={}", id); // CHANGE
+    // CHANGE
+    log.info("Удалён фильм id={}", id);
   }
 
   // ----------- SPRINT 11: лайки и популярность -----------
 
   public void addLike(final long filmId, final long userId) {
     final Film film = filmStore.getById(filmId); // NotFound -> 404, если нет фильма
-    userStore.getById(userId);                   // NotFound -> 404, если нет пользователя
+    userStore.getById(userId); // NotFound -> 404, если нет пользователя
 
     final boolean added = film.getLikes().add(userId);
     if (added) {
-      filmStore.update(film); // фиксируем изменение состояния
+      // фиксируем изменение состояния
+      filmStore.update(film);
       log.info("Пользователь id={} поставил лайк фильму id={}", userId, filmId);
     } else {
       log.debug("Повторный лайк игнорирован: userId={} filmId={}", userId, filmId);
@@ -109,7 +113,8 @@ public class FilmService {
       filmStore.update(film);
       log.info("Пользователь id={} удалил лайк фильму id={}", userId, filmId);
     } else {
-      log.debug("Удаление лайка: лайка не было (userId={} filmId={})", userId, filmId);
+      // SPRINT 11 FIX: если важно видеть причину, поднимаем уровень до WARN (по ревью)
+      log.warn("Удаление лайка не выполнено: лайка не было (userId={} filmId={})", userId, filmId);
     }
   }
 
@@ -117,10 +122,8 @@ public class FilmService {
     if (count <= 0) {
       count = 10; // SPRINT 11: дефолт, если параметр не задан/некорректен
     }
-    return filmStore.findAll().stream()
-        .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
-        .limit(count)
-        .collect(Collectors.toList());
+    // SPRINT 11 FIX: сортировку и лимит выполняет хранилище (для будущей БД)
+    return filmStore.findMostPopular(count);
   }
 
   // ----------- валидация -----------
