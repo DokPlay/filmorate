@@ -6,7 +6,8 @@ import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import lombok.AllArgsConstructor;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,10 +15,14 @@ import lombok.NoArgsConstructor;
  * CHANGES:
  * - CHANGE: id: Integer -> Long (во избежание переполнения и единообразия по проекту).
  * - CHANGE: уточнены/добавлены валидационные аннотации и человекочитаемые сообщения.
+ *
+ * SPRINT 11:
+ * - добавлено поле likes (Set<Long>) для лайков фильма пользователями.
+ * - likes инициализируется пустым Set для уникальности и отсутствия NPE.
+ * - убран @AllArgsConstructor из-за final-поля likes (иначе конструктор станет неудобным).
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class Film {
 
   // CHANGE: тип Integer -> Long
@@ -37,4 +42,7 @@ public class Film {
   @NotNull(message = "Продолжительность обязательна.")
   @Positive(message = "Продолжительность должна быть положительным числом.")
   private Integer duration;
+
+  // SPRINT 11: лайки от пользователей (уникальные id)
+  private final Set<Long> likes = new HashSet<>();
 }

@@ -1,21 +1,29 @@
-name: Maven CI
+name: build
 
 on:
   push:
-    branches: [ main, controllers-films-users ]
+    branches: [ "main", "controllers-films-users" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Build & Test
-        run: mvn -B -U -ntp verify
+
+      - name: Build & Test (with retries)
+        run: |
+          mvn -B -U -ntp \
+            -Dmaven.wagon.http.retryHandler.count=5 \
+            -Dmaven.wagon.http.pool=false \
+            clean verify

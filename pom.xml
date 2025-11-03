@@ -20,6 +20,8 @@
   <properties>
     <java.version>17</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- SPRINT 11: фиксируем версию Lombok для согласованной работы IDE/аннотаций -->
+    <lombok.version>1.18.34</lombok.version>
   </properties>
 
   <dependencies>
@@ -39,7 +41,15 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version> <!-- SPRINT 11: добавлена явная версия -->
       <optional>true</optional>
+    </dependency>
+
+    <!-- SPRINT 11: HTTP-трассировка запросов/ответов (Logbook) -->
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>logbook-spring-boot-starter</artifactId>
+      <version>3.7.2</version>
     </dependency>
 
     <!-- Tests -->
@@ -62,7 +72,22 @@
           <target>${java.version}</target>
           <!-- CHANGE: более идиоматично, чем <compilerArgs><arg>-parameters</arg></compilerArgs> -->
           <parameters>true</parameters>
+          <!-- SPRINT 11: гарантируем работу Lombok-аннотаций в IDE/сборке -->
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
+      </plugin>
+
+      <!-- SPRINT 11 (CI): фиксируем версию maven-jar-plugin, чтобы избежать сетевых 500 на latest -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.3.0</version>
       </plugin>
 
       <!-- Spring Boot -->
