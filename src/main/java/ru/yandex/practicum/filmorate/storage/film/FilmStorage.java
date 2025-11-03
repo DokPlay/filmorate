@@ -9,6 +9,10 @@ import ru.yandex.practicum.filmorate.model.Film;
  *
  * SPRINT 11 (checkstyle):
  * - добавлены пустые строки между методами (EmptyLineSeparator).
+ *
+ * SPRINT 11 FIX:
+ * - Добавлен метод выборки популярных фильмов с ограничением размера.
+ *   Это переносит фильтрацию/сортировку/лимит из сервиса в хранилище (подготовка к БД).
  */
 public interface FilmStorage {
 
@@ -21,4 +25,7 @@ public interface FilmStorage {
   Film update(Film film);
 
   void delete(long id);
+
+  // SPRINT 11 FIX: запрос популярных фильмов делается на уровне хранилища
+  List<Film> findMostPopular(int limit);
 }
