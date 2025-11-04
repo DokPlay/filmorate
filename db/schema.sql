@@ -1,77 +1,71 @@
--- Dictionary: MPA ratings
-CREATE TABLE mpa_ratings (
-    id          SMALLINT      PRIMARY KEY,
-    code        VARCHAR(10)   NOT NULL UNIQUE,  -- G, PG, PG-13, R, NC-17
-    name        VARCHAR(100)  NOT NULL          -- full description
-);
+Enum FriendStatus {
+  unconfirmed
+  confirmed
+}
 
-INSERT INTO mpa_ratings (id, code, name) VALUES
-(1, 'G',     'General audiences'),
-(2, 'PG',    'Parental guidance suggested'),
-(3, 'PG-13', 'Parents strongly cautioned'),
-(4, 'R',     'Restricted'),
-(5, 'NC-17', 'No one 17 and under admitted');
+Table users {
+  id        int          [pk]
+  email     varchar(255) [not null, unique]
+  login     varchar(255) [not null, unique]
+  name      varchar(255) [not null]
+  birthday  date         [not null]
+}
 
--- Dictionary: genres
-CREATE TABLE genres (
-    genre_id    SMALLINT      PRIMARY KEY,
-    name        VARCHAR(100)  NOT NULL UNIQUE
-);
+Table mpa_ratings {
+  id    int       [pk]
+  name  varchar(10) [not null]
+}
 
--- Core: users
-CREATE TABLE users (
-    user_id   BIGSERIAL      PRIMARY KEY,
-    email     VARCHAR(255)   NOT NULL UNIQUE,
-    login     VARCHAR(64)    NOT NULL UNIQUE,
-    name      VARCHAR(255)   NOT NULL,
-    birthday  DATE           NOT NULL,
-    CHECK (birthday <= CURRENT_DATE)
-);
+Table genres {
+  id    int          [pk]
+  name  varchar(100) [not null]
+}
 
--- Core: films
-CREATE TABLE films (
-    film_id        BIGSERIAL      PRIMARY KEY,
-    name           VARCHAR(255)   NOT NULL,
-    description    VARCHAR(200),
-    release_date   DATE           NOT NULL,
-    duration       INTEGER        NOT NULL,
-    mpa_rating_id  SMALLINT       NOT NULL REFERENCES mpa_ratings(id),
-    CHECK (duration > 0),
-    CHECK (release_date >= DATE '1895-12-28')
-);
+Table films {
+  id             int          [pk]
+  name           varchar(255) [not null]
+  description    text
+  release_date   date
+  duration       int
+  rating_mpa_id  int          [not null] // Ref defined below
+}
 
--- Many-to-many: film <-> genre
-CREATE TABLE film_genres (
-    film_id   BIGINT    NOT NULL REFERENCES films(film_id) ON DELETE CASCADE,
-    genre_id  SMALLINT  NOT NULL REFERENCES genres(genre_id),
-    PRIMARY KEY (film_id, genre_id)
-);
+Table friendships {
+  user_id   int          [not null]
+  friend_id int          [not null]
+  status    FriendStatus [not null]
 
--- Likes: user <-> film
-CREATE TABLE film_likes (
-    film_id    BIGINT   NOT NULL REFERENCES films(film_id) ON DELETE CASCADE,
-    user_id    BIGINT   NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (film_id, user_id)
-);
+  indexes {
+    (user_id, friend_id) [pk]
+  }
+}
 
--- Friendship statuses dictionary
-CREATE TABLE friendship_statuses (
-    id          SMALLINT      PRIMARY KEY,
-    code        VARCHAR(20)   NOT NULL UNIQUE,  -- PENDING / CONFIRMED
-    description VARCHAR(255)
-);
+Table film_genres {
+  film_id  int [not null]
+  genre_id int [not null]
 
-INSERT INTO friendship_statuses (id, code, description) VALUES
-(1, 'PENDING',   'Unconfirmed friend request'),
-(2, 'CONFIRMED', 'Confirmed friendship');
+  indexes {
+    (film_id, genre_id) [pk]
+  }
+}
 
--- Friendships between users
-CREATE TABLE friendships (
-    user_id    BIGINT     NOT NULL REFERENCES users(user_id)  ON DELETE CASCADE,
-    friend_id  BIGINT     NOT NULL REFERENCES users(user_id)  ON DELETE CASCADE,
-    status_id  SMALLINT   NOT NULL REFERENCES friendship_statuses(id),
-    created_at TIMESTAMP  NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (user_id, friend_id),
-    CHECK (user_id <> friend_id)
-);
+Table likes {
+  user_id int [not null]
+  film_id int [not null]
+
+  indexes {
+    (user_id, film_id) [pk]
+  }
+}
+
+// Relationships
+Ref: films.rating_mpa_id > mpa_ratings.id
+
+Ref: friendships.user_id   > users.id
+Ref: friendships.friend_id > users.id
+
+Ref: film_genres.film_id  > films.id
+Ref: film_genres.genre_id > genres.id
+
+Ref: likes.user_id > users.id
+Ref: likes.film_id > films.id
