@@ -16,6 +16,8 @@ import ru.yandex.practicum.filmorate.model.Film;
  */
 public interface FilmStorage {
 
+  int DEFAULT_POPULAR_LIMIT = 10;
+
   List<Film> findAll();
 
   Film getById(long id);

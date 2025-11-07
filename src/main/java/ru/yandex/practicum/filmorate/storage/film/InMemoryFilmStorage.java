@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -75,6 +74,6 @@ public class InMemoryFilmStorage implements FilmStorage {
             Comparator.comparingInt((Film f) -> f.getLikes().size())
                 .reversed())
         .limit(limit)
-        .collect(Collectors.toList());
+        .toList();
   }
 }

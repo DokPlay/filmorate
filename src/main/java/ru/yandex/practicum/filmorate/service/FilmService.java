@@ -1,7 +1,13 @@
 package ru.yandex.practicum.filmorate.service;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,6 +16,7 @@ import org.springframework.stereotype.Service;
 // import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -41,6 +48,7 @@ public class FilmService {
 
   // CHANGE: вынесена константа самой ранней корректной даты
   private static final LocalDate EARLIEST_DATE = LocalDate.of(1895, 12, 28);
+  private static final int DEFAULT_POPULAR_LIMIT = FilmStorage.DEFAULT_POPULAR_LIMIT;
 
   // SPRINT 11: внедряем зависимости от интерфейсов хранилищ
   private final FilmStorage filmStore;
@@ -64,6 +72,7 @@ public class FilmService {
 
   public Film create(final Film film) {
     validateBusinessRules(film);
+    normalizeGenres(film);
     // SPRINT 11: генерация id и сохранение — в storage
     final Film saved = filmStore.create(film);
     // CHANGE: безопасный лог
@@ -76,6 +85,7 @@ public class FilmService {
       throw new ValidationException("id обязателен для обновления фильма.");
     }
     validateBusinessRules(film);
+    normalizeGenres(film);
     // SPRINT 11: обновление — через storage
     final Film saved = filmStore.update(film);
     // CHANGE
@@ -119,11 +129,9 @@ public class FilmService {
   }
 
   public List<Film> getPopular(int count) {
-    if (count <= 0) {
-      count = 10; // SPRINT 11: дефолт, если параметр не задан/некорректен
-    }
+    final int effectiveLimit = count <= 0 ? DEFAULT_POPULAR_LIMIT : count; // SPRINT 11: дефолт, если параметр не задан/некорректен
     // SPRINT 11 FIX: сортировку и лимит выполняет хранилище (для будущей БД)
-    return filmStore.findMostPopular(count);
+    return filmStore.findMostPopular(effectiveLimit);
   }
 
   // ----------- валидация -----------
@@ -133,5 +141,32 @@ public class FilmService {
     if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(EARLIEST_DATE)) {
       throw new ValidationException("Дата релиза не может быть раньше " + EARLIEST_DATE + ".");
     }
+    if (film.getMpa() == null || film.getMpa().getId() == null) {
+      throw new ValidationException("Рейтинг MPA обязателен.");
+    }
+    if (film.getMpa().getId() <= 0) {
+      throw new ValidationException("Некорректный идентификатор рейтинга.");
+    }
+  }
+
+  private void normalizeGenres(final Film film) {
+    if (film.getGenres() == null || film.getGenres().isEmpty()) {
+      film.setGenres(Collections.emptySet());
+      return;
+    }
+    final Set<Genre> genres = film.getGenres();
+    final int expectedSize = Math.max(genres.size(), 1);
+    final Set<Integer> seen = new HashSet<>(expectedSize);
+    final Set<Genre> normalized = new LinkedHashSet<>(expectedSize);
+    genres.stream()
+        .filter(Objects::nonNull)
+        .filter(genre -> genre.getId() != null && genre.getId() > 0)
+        .sorted(Comparator.comparingInt(Genre::getId))
+        .forEach(genre -> {
+          if (seen.add(genre.getId())) {
+            normalized.add(new Genre(genre.getId(), genre.getName()));
+          }
+        });
+    film.setGenres(normalized);
   }
 }

@@ -28,6 +28,9 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
  * - хранение данных вынесено в InMemoryUserStorage; генерация id выполняется в storage.
  * - добавлены операции дружбы: addFriend/removeFriend/getFriends/getCommonFriends.
  * - методы работают на уровне INFO для ключевых событий.
+ *
+ * SPRINT 12 (fix):
+ * - removeFriend стал симметричным: при наличии взаимной дружбы удаляем id у friendId и сохраняем обе стороны.
  */
 @Slf4j
 @Service
@@ -80,27 +83,46 @@ public class UserService {
     final User u = userStorage.getById(id);
     final User f = userStorage.getById(friendId);
 
-    final boolean a = u.getFriends().add(friendId);
-    final boolean b = f.getFriends().add(id);
-    if (a || b) {
+    final boolean added = u.getFriends().add(friendId);
+    if (added) {
       userStorage.update(u);
-      userStorage.update(f);
-      log.info("Пользователи стали друзьями: {} <-> {}", id, friendId);
+      if (f.getFriends().contains(id)) {
+        log.info("Дружба подтверждена: {} <-> {}", id, friendId);
+      } else {
+        log.info("Пользователь {} отправил заявку в друзья пользователю {}", id, friendId);
+      }
     } else {
       log.debug("Повторное добавление в друзья проигнорировано: {} <-> {}", id, friendId);
     }
   }
 
   public void removeFriend(final long id, final long friendId) {
+    // fix sprint 12: симметрично разрываем дружбу и сохраняем обе стороны при необходимости
     final User u = userStorage.getById(id);
     final User f = userStorage.getById(friendId);
 
-    final boolean a = u.getFriends().remove(friendId);
-    final boolean b = f.getFriends().remove(id);
-    if (a || b) {
+    final boolean removedFromU = u.getFriends().remove(friendId);
+    boolean removedFromF = false;
+
+    // Если дружба была взаимной — удаляем id у друга
+    if (f.getFriends().contains(id)) {
+      removedFromF = f.getFriends().remove(id);
+    }
+
+    if (removedFromU) {
       userStorage.update(u);
+    }
+    if (removedFromF) {
       userStorage.update(f);
-      log.info("Дружба удалена: {} X {}", id, friendId);
+    }
+
+    if (removedFromU && removedFromF) {
+      log.info("Дружба разорвана: {} <-> {}", id, friendId);
+    } else if (removedFromU) {
+      log.info("Пользователь {} удалил из друзей пользователя {}", id, friendId);
+    } else if (removedFromF) {
+      // Неконсистентный случай: у друга была запись, у текущего — нет; подчистили.
+      log.info("Подчистка неконсистентной записи дружбы: удалили {} из друзей {}", id, friendId);
     } else {
       log.debug("Удаление дружбы: связи не было {} X {}", id, friendId);
     }
