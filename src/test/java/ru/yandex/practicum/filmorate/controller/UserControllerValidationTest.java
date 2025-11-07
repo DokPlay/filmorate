@@ -17,8 +17,11 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class UserControllerValidationTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void shouldFailWhenEmailInvalid() throws Exception {
@@ -52,9 +55,13 @@ class UserControllerValidationTest {
 
     @Test
     void shouldDefaultNameToLoginWhenBlank() throws Exception {
+        // Делаем логин/email уникальными, чтобы не ловить UNIQUE-ошибку из БД
+        String login = "space_cadet_" + System.nanoTime();
+        String email = login + "@example.com";
+
         Map<String, Object> payload = Map.of(
-                "email", "user@example.com",
-                "login", "space_cadet",
+                "email", email,
+                "login", login,
                 "name", "",
                 "birthday", "1990-01-01"
         );
@@ -63,6 +70,6 @@ class UserControllerValidationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("space_cadet")));
+                .andExpect(jsonPath("$.name", is(login)));
     }
 }

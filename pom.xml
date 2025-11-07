@@ -8,7 +8,7 @@
   <artifactId>filmorate</artifactId>
   <version>1.0.0</version>
   <name>Filmorate</name>
-  <description>Filmorate Sprint 1</description>
+  <description>Filmorate Sprint 12</description> <!-- SPRINT 12: обновили описание под текущий спринт -->
 
   <parent>
     <groupId>org.springframework.boot</groupId>
@@ -37,6 +37,19 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
+    <!-- SPRINT 12: JDBC и подключение к базе данных -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- SPRINT 12: встроенная БД H2, в рантайме хранит данные в файле ./db/filmorate -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
     <!-- Lombok -->
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -52,7 +65,7 @@
       <version>3.7.2</version>
     </dependency>
 
-    <!-- Tests -->
+    <!-- SPRINT 12: тестирование, в том числе @JdbcTest с in-memory H2 -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
