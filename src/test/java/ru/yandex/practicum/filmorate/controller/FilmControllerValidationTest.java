@@ -29,7 +29,9 @@ class FilmControllerValidationTest {
                 "name", " ",
                 "description", "desc",
                 "releaseDate", LocalDate.now().toString(),
-                "duration", 120
+                "duration", 120,
+                // mpa обязателен, но тут нам всё равно нужен 400
+                "mpa", Map.of("id", 1)
         );
 
         mockMvc.perform(post("/films")
@@ -45,7 +47,8 @@ class FilmControllerValidationTest {
                 "name", "Ok",
                 "description", longDesc,
                 "releaseDate", LocalDate.now().toString(),
-                "duration", 120
+                "duration", 120,
+                "mpa", Map.of("id", 1)
         );
 
         mockMvc.perform(post("/films")
@@ -60,7 +63,8 @@ class FilmControllerValidationTest {
                 "name", "Ok",
                 "description", "Ok",
                 "releaseDate", "1895-12-27",
-                "duration", 120
+                "duration", 120,
+                "mpa", Map.of("id", 1)
         );
 
         mockMvc.perform(post("/films")
@@ -75,7 +79,8 @@ class FilmControllerValidationTest {
                 "name", "Ok",
                 "description", "Ok",
                 "releaseDate", "2000-01-01",
-                "duration", 0
+                "duration", 0,
+                "mpa", Map.of("id", 1)
         );
 
         mockMvc.perform(post("/films")
@@ -90,7 +95,9 @@ class FilmControllerValidationTest {
                 "name", "Valid Film",
                 "description", "Ok",
                 "releaseDate", "2000-01-01",
-                "duration", 100
+                "duration", 100,
+                // В позитивном кейсе обязательно отправляем валидный рейтинг
+                "mpa", Map.of("id", 1)
         );
 
         mockMvc.perform(post("/films")

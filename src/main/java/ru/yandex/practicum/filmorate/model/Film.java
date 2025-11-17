@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,6 +44,15 @@ public class Film {
   @Positive(message = "Продолжительность должна быть положительным числом.")
   private Integer duration;
 
+  @NotNull(message = "Рейтинг обязателен.")
+  private Mpa mpa;
+
+  private Set<Genre> genres = new LinkedHashSet<>();
+
   // SPRINT 11: лайки от пользователей (уникальные id)
   private final Set<Long> likes = new HashSet<>();
+
+  public void setGenres(Set<Genre> genres) {
+    this.genres = genres == null ? new LinkedHashSet<>() : new LinkedHashSet<>(genres);
+  }
 }
